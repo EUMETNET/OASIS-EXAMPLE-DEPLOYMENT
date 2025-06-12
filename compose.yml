@@ -1,4 +1,4 @@
-name: oasis_example_setup
+ame: example-oasis-deplyoment
 services:
   db:
     image: kartoza/postgis:15 # Use this instead of the official image as it has an arm64 image
@@ -62,6 +62,7 @@ services:
       - PUTOBSLIMIT=$PUTOBSLIMIT
       - LOTIME=86400
       - HITIME=-600
+    env_file: "store.env"
     restart: always
     healthcheck:
       test:
@@ -73,48 +74,3 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
-
-  api:
-    image: ghcr.io/eumetnet/e-soh/api:0.3.0
-    ports:
-      - "8008:8000"
-    environment:
-      - DSHOST=store
-      - DSPORT=50050
-      - GRPC_MAX_MESSAGE_SIZE=-1
-      - FORWARDED_ALLOW_IPS=${FORWARDED_ALLOW_IPS:-127.0.0.1}
-      - GUNICORN_CMD_ARGS=--bind 0.0.0.0:8000 --workers=4 --access-logfile -
-      - FASTAPI_ROOT_PATH=/raw/
-    restart: always
-    depends_on:
-      store:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "curl --fail http://localhost:8000/health || exit 1"]
-      interval: 5s
-      timeout: 1s
-      retries: 3
-      start_period: 30s # Failures in 30 seconds do not mark container as unhealthy
-
-  ingest:
-    image: ghcr.io/eumetnet/e-soh/ingest:0.3.0
-    ports:
-      - "8009:8001"
-    network_mode: ""
-    restart: always
-    environment:
-      - DSHOST=${DSHOST:-store}
-      - DSPORT=${DSPORT:-50050}
-      - MQTT_HOST=iot.esoh.met.no
-      - MQTT_PORT=8883
-      - MQTT_TLS=True
-      - MQTT_TOPIC_PREPEND=raw-obs
-      - INGEST_LOGLEVEL
-      - GUNICORN_CMD_ARGS=--bind 0.0.0.0:8001 --workers=8 --access-logfile -
-      - FASTAPI_ROOT_PATH=/raw/ingest/
-    depends_on:
-      store:
-        condition: service_healthy
-
-volumes:
-  ts-data-raw:
