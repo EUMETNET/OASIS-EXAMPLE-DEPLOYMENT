@@ -4,12 +4,12 @@ services:
     image: kartoza/postgis:15 # Use this instead of the official image as it has an arm64 image
     volumes:
       - ts-data-raw:/var/lib/postgresql # for postgres image
-      - ./datastore/database/healthcheck_postgis_uptime.sh:/healthcheck_postgis_uptime.sh # for the healthcheck
+      - ./healthcheck_postgis_uptime.sh:/healthcheck_postgis_uptime.sh # for the healthcheck
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=mysecretpassword
       - POSTGRES_DB=data
-    shm_size: 312m
+    shm_size: 312m # Increase the size of shared memory in docker, default is 64MB and is usually not enough.
     restart: always
     healthcheck:
       # HACK Due to the installation of Postgis extension the database is restarted, the healthcheck checks if the database is up for longer than specified time.
@@ -20,7 +20,7 @@ services:
         ]
       interval: 5s
       timeout: 1s
-      retries: 3
+      retries: 10
       start_period: 30s # Failures in 30 seconds do not mark container as unhealthy
 
   prometheus-postgres-exporter:
@@ -105,9 +105,9 @@ services:
     environment:
       - DSHOST=${DSHOST:-store}
       - DSPORT=${DSPORT:-50050}
-      - MQTT_HOST=iot.esoh.met.no
-      - MQTT_PORT=8883
-      - MQTT_TLS=True
+      - MQTT_HOST=mqtt
+      - MQTT_PORT=1883
+      - MQTT_TLS=False
       - MQTT_TOPIC_PREPEND=raw-obs
       - INGEST_LOGLEVEL
       - GUNICORN_CMD_ARGS=--bind 0.0.0.0:8001 --workers=8 --access-logfile -
@@ -115,6 +115,28 @@ services:
     depends_on:
       store:
         condition: service_healthy
+      mqtt:
+        condition: service_started
+      mqtt_wis2:
+        condition: service_started
+
+  mqtt:
+    image: eclipse-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto:/etc/mosquitto
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+  mqtt_wis2:
+    image: eclipse-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1884:1884"
+    volumes:
+      - ./mosquitto:/etc/mosquitto
+      - ./mosquitto/mosquitto_wis2.conf:/mosquitto/config/mosquitto.conf
 
   prometheus:
     profiles: ["monitoring"]
