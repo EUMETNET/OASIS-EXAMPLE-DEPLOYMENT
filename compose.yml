@@ -1,4 +1,4 @@
-ame: example-oasis-deplyoment
+name: example-oasis-deplyoment
 services:
   db:
     image: kartoza/postgis:15 # Use this instead of the official image as it has an arm64 image
