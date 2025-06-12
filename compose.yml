@@ -3,7 +3,7 @@ services:
   db:
     image: kartoza/postgis:15 # Use this instead of the official image as it has an arm64 image
     volumes:
-      - ts-data-raw:/var/lib/postgresql # for postgres image
+      - ts-data:/var/lib/postgresql # for postgres image
       - ./healthcheck_postgis_uptime.sh:/healthcheck_postgis_uptime.sh # for the healthcheck
     environment:
       - POSTGRES_USER=postgres
@@ -42,7 +42,6 @@ services:
       - PUTOBSLIMIT=$PUTOBSLIMIT
       - LOTIME=86400
       - HITIME=-600
-    env_file: "store.env"
     restart: always
     healthcheck:
       test:
@@ -87,9 +86,39 @@ services:
       - DSPORT=${DSPORT:-50050}
       - INGEST_LOGLEVEL
       - GUNICORN_CMD_ARGS=--bind 0.0.0.0:8001 --workers=8 --access-logfile -
+      - MQTT_HOST=${MQTT_HOST:-mqtt}
+      - MQTT_USERNAME=${MQTT_USERNAME:-}
+      - MQTT_PASSWORD=${MQTT_PASSWORD:-}
+      - MQTT_PORT=${MQTT_PORT:-1883}
+      - MQTT_TLS=${MQTT_TLS:-False}
+      - MQTT_TOPIC_PREPEND=${MQTT_TOPIC_PREPEND:-'TEMP_TOPIC'}
+      - WIS2_TOPIC=${WIS2_TOPIC:-'TEMP_TOPIC'}
+      - WIS2_MQTT_HOST=${MQTT_HOST:-mqtt_wis2}
+      - WIS2_MQTT_USERNAME=${MQTT_USERNAME:-}
+      - WIS2_MQTT_PASSWORD=${MQTT_PASSWORD:-}
+      - WIS2_MQTT_TLS=${MQTT_TLS:-False}
+      - WIS2_MQTT_PORT=${MQTT_PORT:-1884}
     depends_on:
       store:
         condition: service_healthy
+
+  mqtt:
+    image: eclipse-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto:/etc/mosquitto
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+  mqtt_wis2:
+    image: eclipse-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1884:1884"
+    volumes:
+      - ./mosquitto:/etc/mosquitto
+      - ./mosquitto/mosquitto_wis2.conf:/mosquitto/config/mosquitto.conf
 
 volumes:
   ts-data:
