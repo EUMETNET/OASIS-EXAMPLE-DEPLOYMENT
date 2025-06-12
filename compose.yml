@@ -1,15 +1,15 @@
-ame: example-oasis-deplyoment
+name: example-oasis-deplyoment
 services:
   db:
     image: kartoza/postgis:15 # Use this instead of the official image as it has an arm64 image
     volumes:
-      - ts-data-raw:/var/lib/postgresql # for postgres image
-      - ./datastore/database/healthcheck_postgis_uptime.sh:/healthcheck_postgis_uptime.sh # for the healthcheck
+      - ts-data:/var/lib/postgresql # for postgres image
+      - ./healthcheck_postgis_uptime.sh:/healthcheck_postgis_uptime.sh # for the healthcheck
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=mysecretpassword
       - POSTGRES_DB=data
-    shm_size: 312m
+    shm_size: 312m # Increase the size of shared memory in docker, default is 64MB and is usually not enough.
     restart: always
     healthcheck:
       # HACK Due to the installation of Postgis extension the database is restarted, the healthcheck checks if the database is up for longer than specified time.
@@ -20,28 +20,8 @@ services:
         ]
       interval: 5s
       timeout: 1s
-      retries: 3
+      retries: 10
       start_period: 30s # Failures in 30 seconds do not mark container as unhealthy
-
-  prometheus-postgres-exporter:
-    image: quay.io/prometheuscommunity/postgres-exporter
-    environment:
-      - DATA_SOURCE_URI=db:5432/data
-      - DATA_SOURCE_USER=postgres
-      - DATA_SOURCE_PASS=mysecretpassword
-    ports:
-      - "9187:9187"
-    volumes:
-      - ./postgres_exporter.yml:/postgres_exporter.yml:ro
-    depends_on:
-      db:
-        condition: service_healthy
-    command:
-      [
-        "--collector.stat_statements",
-        "--collector.stat_user_tables",
-        "--collector.stat_activity_autovacuum",
-      ]
 
   migrate:
     image: ghcr.io/eumetnet/e-soh/migrate:0.3.0
@@ -62,7 +42,6 @@ services:
       - PUTOBSLIMIT=$PUTOBSLIMIT
       - LOTIME=86400
       - HITIME=-600
-    env_file: "store.env"
     restart: always
     healthcheck:
       test:
@@ -74,3 +53,6 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+
+volumes:
+  ts-data:
