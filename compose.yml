@@ -101,6 +101,10 @@ services:
     depends_on:
       store:
         condition: service_healthy
+      mqtt:
+        condition: service_started
+      mqtt_wis2:
+        condition: service_started
 
   mqtt:
     image: eclipse-mosquitto
@@ -121,12 +125,28 @@ services:
       - ./mosquitto/mosquitto_wis2.conf:/mosquitto/config/mosquitto.conf
 
   prometheus:
+    profiles: ["monitoring"]
     image: prom/prometheus
     ports:
       - "9090:9090"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
+
+  grafana:
+    profiles: ["monitoring"]
+    image: grafana/grafana-oss:11.2.0
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=mysecretpassword
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:rw
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:rw
+    depends_on:
+      - prometheus
 
   prometheus-postgres-exporter:
     image: quay.io/prometheuscommunity/postgres-exporter
