@@ -1,4 +1,4 @@
-name: example-oasis-deplyoment
+name: oasis_example_setup
 services:
   db:
     image: kartoza/postgis:15 # Use this instead of the official image as it has an arm64 image
@@ -86,11 +86,11 @@ services:
       - DSPORT=${DSPORT:-50050}
       - INGEST_LOGLEVEL
       - GUNICORN_CMD_ARGS=--bind 0.0.0.0:8001 --workers=8 --access-logfile -
-      - MQTT_HOST=${MQTT_HOST:-mqtt}
-      - MQTT_USERNAME=${MQTT_USERNAME:-}
-      - MQTT_PASSWORD=${MQTT_PASSWORD:-}
-      - MQTT_PORT=${MQTT_PORT:-1883}
-      - MQTT_TLS=${MQTT_TLS:-False}
+      - MQTT_HOST=iot.esoh.met.no
+      - MQTT_USERNAME=admin
+      - MQTT_PASSWORD=met-admin
+      - MQTT_PORT=8883
+      - MQTT_TLS=${MQTT_TLS:-True}
       - MQTT_TOPIC_PREPEND=${MQTT_TOPIC_PREPEND:-'TEMP_TOPIC'}
       - WIS2_TOPIC=${WIS2_TOPIC:-'TEMP_TOPIC'}
       - WIS2_MQTT_HOST=${MQTT_HOST:-mqtt_wis2}
