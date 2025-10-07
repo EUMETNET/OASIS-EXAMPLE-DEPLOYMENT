@@ -24,7 +24,7 @@ services:
       start_period: 30s # Failures in 30 seconds do not mark container as unhealthy
 
   migrate:
-    image: ghcr.io/eumetnet/e-soh/migrate:0.3.0
+    image: ghcr.io/eumetnet/e-soh/migrate:0.3.3
     environment:
       - DB_USER=postgres
       - DB_PASS=mysecretpassword
@@ -34,7 +34,7 @@ services:
         condition: service_healthy
 
   store:
-    image: ghcr.io/eumetnet/e-soh/datastore:0.3.0
+    image: ghcr.io/eumetnet/e-soh/datastore:0.3.3
     environment:
       - PGHOST=db
       - PGPORT=5432
@@ -55,7 +55,7 @@ services:
         condition: service_completed_successfully
 
   api:
-    image: ghcr.io/eumetnet/e-soh/api:0.3.0
+    image: ghcr.io/eumetnet/e-soh/api:0.3.3
     ports:
       - "8008:8000"
     environment:
@@ -76,7 +76,7 @@ services:
       start_period: 30s # Failures in 30 seconds do not mark container as unhealthy
 
   ingest:
-    image: ghcr.io/eumetnet/e-soh/ingest:0.3.0
+    image: ghcr.io/eumetnet/e-soh/ingest:0.3.3
     ports:
       - "8009:8001"
     network_mode: ""
@@ -86,11 +86,11 @@ services:
       - DSPORT=${DSPORT:-50050}
       - INGEST_LOGLEVEL
       - GUNICORN_CMD_ARGS=--bind 0.0.0.0:8001 --workers=8 --access-logfile -
-      - MQTT_HOST=iot.esoh.met.no
-      - MQTT_USERNAME=admin
-      - MQTT_PASSWORD=met-admin
-      - MQTT_PORT=8883
-      - MQTT_TLS=${MQTT_TLS:-True}
+      - MQTT_HOST=mqtt
+      - MQTT_USERNAME=
+      - MQTT_PASSWORD=
+      - MQTT_PORT=1883
+      - MQTT_TLS=${MQTT_TLS:-False}
       - MQTT_TOPIC_PREPEND=${MQTT_TOPIC_PREPEND:-'TEMP_TOPIC'}
       - WIS2_TOPIC=${WIS2_TOPIC:-'TEMP_TOPIC'}
       - WIS2_MQTT_HOST=${MQTT_HOST:-mqtt_wis2}
